@@ -1,0 +1,49 @@
+name: Build vSECC ARMv7 musl EXI converter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout build package
+        uses: actions/checkout@v4
+
+      - name: Enable ARM emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+
+      - name: Build static ARMv7 musl converter_tool
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p out
+          docker run --rm \
+            --platform linux/arm/v7 \
+            -v "$PWD:/work" \
+            -w /work \
+            arm32v7/alpine:3.18 \
+            /bin/sh /work/build_armv7_musl.sh
+
+      - name: Show artifact hashes
+        shell: bash
+        run: |
+          ls -lh out
+          cat out/SHA256SUMS.txt
+          cat out/SMOKE_TEST.txt
+
+      - name: Upload converter artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vSECC-armv7-musl-converter_tool
+          path: |
+            out/converter_tool
+            out/SHA256SUMS.txt
+            out/SMOKE_TEST.txt
+          if-no-files-found: error
+          retention-days: 30
