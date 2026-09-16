@@ -1,0 +1,125 @@
+[
+  {
+    "id": "tab_r53_step3",
+    "type": "tab",
+    "label": "R5.3 STEP3 Decoder Verify",
+    "disabled": false,
+    "info": "Checks /data/converter_tool only. It may chmod the uploaded decoder executable and run a DIN70121 decode smoke test. No charging-control writes."
+  },
+  {
+    "id": "cmt_r53_step3",
+    "type": "comment",
+    "z": "tab_r53_step3",
+    "name": "Upload converter_tool to Persistent Data first, then press RUN",
+    "info": "Expected location: /data/converter_tool. This flow does not install packages or touch charging logic.",
+    "x": 360,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "inj_r53_step3",
+    "type": "inject",
+    "z": "tab_r53_step3",
+    "name": "RUN decoder verify + DIN smoke test",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "r53_decoder_verify",
+    "payload": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 140,
+    "wires": [
+      [
+        "exec_r53_step3"
+      ]
+    ]
+  },
+  {
+    "id": "exec_r53_step3",
+    "type": "exec",
+    "z": "tab_r53_step3",
+    "command": "echo '---R5.3 DECODER FILE---'; if [ ! -f /data/converter_tool ]; then echo 'STATUS=MISSING'; echo 'Upload the ARMv7/musl converter_tool to vSECC Persistent Data first.'; exit 0; fi; ls -l /data/converter_tool; echo '---CHMOD---'; chmod 755 /data/converter_tool 2>&1 && echo 'CHMOD=OK' || echo 'CHMOD=FAIL'; echo '---SHA256---'; (sha256sum /data/converter_tool 2>/dev/null || true); echo '---DIN70121 SMOKE TEST---'; OUT=$(/data/converter_tool decode 809a021050908c0c0c0c0c51514002808142807c0c0c0000 urn:din:70121:2012:MsgDef 2>&1); RC=$?; echo \"EXIT_CODE=$RC\"; echo \"$OUT\"; if [ \"$RC\" -eq 0 ]; then echo 'STATUS=READY_DIN'; else echo 'STATUS=EXEC_OR_DECODE_FAILED'; fi; true",
+    "addpay": "",
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Verify /data/converter_tool",
+    "x": 530,
+    "y": 140,
+    "wires": [
+      [
+        "dbg_out_r53_step3"
+      ],
+      [
+        "dbg_err_r53_step3"
+      ],
+      [
+        "dbg_rc_r53_step3"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_out_r53_step3",
+    "type": "debug",
+    "z": "tab_r53_step3",
+    "name": "STDOUT - send this to GPT",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 840,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "dbg_err_r53_step3",
+    "type": "debug",
+    "z": "tab_r53_step3",
+    "name": "STDERR",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "dbg_rc_r53_step3",
+    "type": "debug",
+    "z": "tab_r53_step3",
+    "name": "RETURN CODE",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 780,
+    "y": 180,
+    "wires": []
+  }
+]
